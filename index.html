@@ -1,0 +1,295 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d6b5f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Frases">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Frases de Viaje</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Bricolage+Grotesque:wght@600;800&display=swap">
+<style>
+/* Layout: sticky search + chip tabs on top; one column of phrase cards; full-screen "show staff" overlay with huge English text */
+:root{
+  --bg:#f1f5f6; --surface:#ffffff; --fg:#10242c; --muted:#53686f; --line:#d3dde0;
+  --accent:#0d6b5f; --accent-fg:#ffffff; --en-bg:#e3f1ee; --warn:#b3261e;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1a1f; --surface:#14272e; --fg:#e6f0f2; --muted:#9bb2b9; --line:#25404a;
+  --accent:#4fd1b5; --accent-fg:#062a24; --en-bg:#0f3a38; --warn:#ff8a80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1a1f; --surface:#14272e; --fg:#e6f0f2; --muted:#9bb2b9; --line:#25404a;
+  --accent:#4fd1b5; --accent-fg:#062a24; --en-bg:#0f3a38; --warn:#ff8a80; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{color-scheme:light dark}
+body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:17px;line-height:1.45;
+  padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.wrap{max-width:720px;margin:0 auto}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 8px;
+  margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
+h1{font:800 1.5rem/1.1 var(--display);margin:0 0 8px;letter-spacing:-.01em}
+h1 small{font:400 .85rem var(--body);color:var(--muted);display:block;margin-top:2px;letter-spacing:0}
+#q{width:100%;font:inherit;padding:12px 14px;border:2px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;font:700 .95rem var(--body);padding:9px 14px;border-radius:999px;border:2px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+main{display:flex;flex-direction:column;gap:14px;padding-top:10px}
+h2{font:800 1.15rem var(--display);margin:10px 0 0;letter-spacing:.01em}
+.note{color:var(--muted);font-size:.9rem;margin:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lbl{font:700 .75rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.es{font-size:1.05rem;margin:0}
+.en{margin:0;font-style:italic;font-size:1.15rem;font-weight:700;background:var(--en-bg);padding:10px 12px;border-radius:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:700 .95rem var(--body);padding:10px 14px;border-radius:8px;border:2px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;min-height:44px}
+.btn.main{background:var(--accent);color:var(--accent-fg)}
+a.btn{text-decoration:none;display:inline-flex;align-items:center}
+.fill{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fill input{font:inherit;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);min-width:0;flex:1 1 140px}
+#tr-dir,#tr-src{font:inherit;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
+#tr-src{resize:vertical}
+.btn:disabled{opacity:.6}
+.city h3{font:800 1.25rem var(--display);margin:0}
+.city .meta{color:var(--muted);font-size:.9rem;margin:0}
+dl{margin:0;display:grid;gap:8px}
+dt{font:700 .75rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+dd{margin:0}
+.sos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sos div{background:var(--surface);border:2px solid var(--warn);border-radius:12px;padding:10px;text-align:center}
+.sos b{display:block;font:800 1.8rem var(--display);color:var(--warn)}
+.sos span{font-size:.85rem;color:var(--muted)}
+#show{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;justify-content:center;gap:20px;
+  padding:max(20px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));overflow:auto}
+#show .big{font:800 clamp(1.7rem,7vw,3.2rem)/1.2 var(--display);font-style:italic;margin:0;overflow-wrap:anywhere}
+#show .small{color:var(--muted);margin:0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;z-index:60}
+@media (prefers-reduced-motion:no-preference){.tab,.btn{transition:background .15s}}
+</style>
+<div class="wrap">
+<header>
+  <h1>Frases de Viaje <small>Dinamarca · Suecia · Noruega · 10–25 nov</small></h1>
+  <input id="q" type="search" placeholder="Buscar: taxi, desayuno, tren, aurora…" aria-label="Buscar frase" autocomplete="off">
+  <div class="tabs" id="tabs" role="tablist"></div>
+</header>
+<main id="main"></main>
+</div>
+<div id="show" hidden>
+  <p class="small" id="showLbl">Para el personal · For staff</p>
+  <p class="big" id="showEn"></p>
+  <p class="small" id="showEs"></p>
+  <div class="row">
+    <button class="btn main" id="showSay">Escuchar en inglés</button>
+    <button class="btn" id="showClose">Cerrar</button>
+  </div>
+</div>
+<script>
+const CITIES=[
+{c:"Copenhague",h:"Hotel Skt. Annæ",p:"$190/noche aprox.",n:"Llegada · sale a Estocolmo el 10 nov",a:"Sankt Annæ Plads 18-20, 1250 København K, Dinamarca",go:"Estación Central de Copenhague (København H)",how:"A unos 20-25 min caminando, o bus/metro corto desde Kongens Nytorv hasta Nørreport o København H.",buy:"Tren directo Copenhague → Estocolmo (~5h30, vía el puente de Öresund por Malmö). Operadores: Snälltåget o DSB.",say:["Hola, quiero comprar dos tiquetes de tren de Copenhague a Estocolmo para el día 10 de noviembre, por favor.","Hello, I'd like to buy two train tickets from Copenhagen to Stockholm for November 10th, please."],taxi:["Buenas, ¿me puede llevar a Sankt Annæ Plads 18-20, por favor? Es el Hotel Skt. Annæ.","Hello, could you take me to Sankt Annæ Plads 18-20, please? It's the Hotel Skt. Annæ."]},
+{c:"Estocolmo",h:"Scandic Continental",p:"$180/noche aprox.",n:"3 noches: 10-13 nov",a:"Vasagatan 22, 111 21 Estocolmo, Suecia",go:"Estación Central de Estocolmo (Stockholm Centralstation)",how:"Está literalmente cruzando la calle del hotel, menos de 5 minutos caminando.",buy:"Tren directo Estocolmo → Oslo (~5h20-6h, 4 salidas diarias). Operadores: SJ o Vy.",say:["Hola, quiero comprar dos tiquetes de tren de Estocolmo a Oslo para el día 13 de noviembre, por favor.","Hello, I'd like to buy two train tickets from Stockholm to Oslo for November 13th, please."],taxi:["Buenas, ¿me puede llevar a Vasagatan 22, por favor? Es el Scandic Continental.","Hello, could you take me to Vasagatan 22, please? It's the Scandic Continental."]},
+{c:"Oslo (ida)",h:"Thon Hotel Opera",p:"$150/noche aprox.",n:"1 noche: 13-14 nov",a:"Dronning Eufemias gate 4, 0154 Oslo, Noruega",go:"Punto de encuentro del tour Norway in a Nutshell (sale de la Estación Central de Oslo)",how:"A unos 3-5 minutos caminando; el hotel está pegado a la estación, junto a la Ópera.",buy:"Tour contratado Oslo → Bergen (Norway in a Nutshell, 1 día): Bergensbanen + ramal de Flåm + crucero por el Sognefjord. Ya reservado y pagado, nada que comprar aquí.",say:["Hola, mi nombre es Jairo, tengo una reservación para el tour Norway in a Nutshell de Oslo a Bergen, con salida el 14 de noviembre.","Hello, my name is Jairo, I have a reservation for the Norway in a Nutshell tour from Oslo to Bergen, departing November 14th."],taxi:["Buenas, ¿me puede llevar a Dronning Eufemias gate 4, por favor? Es el Thon Hotel Opera.","Hello, could you take me to Dronning Eufemias gate 4, please? It's the Thon Hotel Opera."]},
+{c:"Bergen",h:"Thon Hotel Bristol",p:"$170/noche aprox.",n:"1 noche: 14-15 nov",a:"Torgallmenningen 11, 5014 Bergen, Noruega",go:"Muelle de embarque del crucero Havila Voyages, en el puerto de Bergen",how:"El hotel está en el centro, cerca de Bryggen; el muelle queda a pocos minutos caminando o en taxi corto.",buy:"Embarque en el crucero Havila Voyages, Bergen → Tromsø, rumbo norte.",say:["Hola, mi nombre es Jairo, tengo una reservación para el crucero Havila con salida el 15 de noviembre hacia Tromsø.","Hello, my name is Jairo, I have a reservation for the Havila cruise departing November 15th towards Tromsø."],taxi:["Buenas, ¿me puede llevar a Torgallmenningen 11, por favor? Es el Thon Hotel Bristol.","Hello, could you take me to Torgallmenningen 11, please? It's the Thon Hotel Bristol."]},
+{c:"Tromsø",h:"Clarion Collection Hotel Aurora",p:"$200/noche aprox.",n:"5 noches: 19-24 nov",a:"Sjøgata 19-21, 9008 Tromsø, Noruega",go:"No hay tren hasta Tromsø: el regreso es en avión",how:"El hotel está en el centro, junto al puerto; los muelles de las excursiones y el centro quedan a pie.",buy:"Vuelo doméstico Tromsø → Oslo (conecta con el vuelo de regreso a Colombia). Operadores: SAS o Norwegian.",say:["Hola, tengo una reservación de vuelo de Tromsø a Oslo para el día 24 de noviembre, mi nombre es Jairo. Esa noche me quedo en Oslo antes del vuelo a Bogotá del día siguiente a las 6 de la mañana.","Hello, I have a flight booking from Tromsø to Oslo on November 24th, my name is Jairo. That night I am staying in Oslo before my flight to Bogotá the next day at 6am."],taxi:["Buenas, ¿me puede llevar a Sjøgata 19-21, por favor? Es el Clarion Collection Hotel Aurora.","Hello, could you take me to Sjøgata 19-21, please? It's the Clarion Collection Hotel Aurora."]},
+{c:"Oslo (regreso)",h:"Thon Hotel Opera",p:"$150/noche aprox.",n:"1 noche: 24-25 nov · vuelo a Bogotá 25 nov, 6:00 am",a:"Dronning Eufemias gate 4, 0154 Oslo, Noruega",go:"Nada más que comprar: última parada antes del vuelo a Bogotá",how:"A unos 3-5 minutos caminando desde la Estación Central de Oslo (Oslo S); el hotel está pegado a la estación, junto a la Ópera.",buy:"Nada que comprar: el vuelo Oslo → Bogotá del 25 de noviembre a las 6:00 am ya está organizado aparte.",say:["Hola, mi nombre es Jairo, tengo una reservación para una noche a partir de hoy.","Hello, my name is Jairo, I have a reservation for one night starting today."],taxi:["Buenas, ¿me puede llevar a Dronning Eufemias gate 4, por favor? Es el Thon Hotel Opera.","Hello, could you take me to Dronning Eufemias gate 4, please? It's the Thon Hotel Opera."]}
+];
+const GROUPS=[
+{id:"hotel",t:"Hotel",s:"Válidas para los 6 hoteles",i:[
+["Al llegar","Hola, buenas. Mi nombre es Jairo, tengo una reservación para esta noche.","Hello, good day. My name is Jairo, I have a reservation for tonight."],
+["Si preguntan cuántos son","Son dos personas, por favor.","It's for two people, please."],
+["Desayuno","¿A qué hora es el desayuno?","What time is breakfast?"],
+["Wifi","¿Cuál es la contraseña del wifi?","What is the wifi password?"],
+["Al salir","Buenos días, quisiera hacer el check-out, por favor.","Good morning, I'd like to check out, please."]]},
+{id:"tren",t:"Trenes",s:"DB / SJ / Vy",i:[
+["Al abordar o mostrar el tiquete","Hola, aquí está mi reservación de tren.","Hello, here is my train reservation."],
+["Preguntar el andén","Disculpe, ¿de qué andén sale el tren a [ciudad]?","Excuse me, which platform does the train to [ciudad] leave from?"],
+["Confirmar que es el tren","¿Este es el tren a [ciudad]?","Is this the train to [ciudad]?"],
+["Ayuda con el equipaje","¿Me puede ayudar con el equipaje, por favor?","Could you help me with my luggage, please?"]]},
+{id:"crucero",t:"Crucero",s:"Havila Voyages, Bergen → Tromsø",i:[
+["Al hacer el check-in","Hola, mi nombre es Jairo, tengo una reservación para el crucero a Tromsø.","Hello, my name is Jairo, I have a reservation for the cruise to Tromsø."],
+["Camarote","¿Me puede indicar dónde queda mi camarote?","Could you tell me where my cabin is?"],
+["Horarios de comida","¿A qué hora son las comidas a bordo?","What time are the meals on board?"],
+["Excursiones en tierra","¿Dónde me registro para las excursiones en tierra?","Where do I sign up for the shore excursions?"]]},
+{id:"tours",t:"Excursiones",s:"Tromsø, reservadas en GetYourGuide con guía en español",i:[
+["Punto de encuentro","Hola, mi nombre es Jairo, tengo una reserva hecha por GetYourGuide para la excursión de hoy, con guía en español.","Hello, my name is Jairo, I have a GetYourGuide booking for today's tour, with a Spanish-speaking guide."],
+["Si piden el código","Tengo el código de confirmación en mi teléfono, un momento por favor.","I have the confirmation code on my phone, one moment please."],
+["Auroras boreales","Tengo una reserva para la excursión de auroras boreales de esta noche.","I have a booking for tonight's Northern Lights tour."],
+["Trineo de perros","Tengo una reserva para el trineo de perros.","I have a booking for the dog sledding tour."],
+["Ballenas","Tengo una reserva para el tour de avistamiento de ballenas.","I have a booking for the whale watching tour."],
+["Cultura sami","Tengo una reserva para la excursión de cultura sami.","I have a booking for the Sami culture tour."],
+["Ropa de abrigo","¿Necesito llevar ropa especial para esta excursión?","Do I need to bring special clothing for this tour?"]]},
+{id:"taxi",t:"Taxi",s:"Paso a paso",tip:"Lo más fácil es pedirlo con una app (Uber o Bolt, si funcionan en la ciudad): se pide, se paga y se ve el precio sin hablar con nadie.",i:[
+["Si no hay app, pedirlo en el hotel","Hola, ¿me puede pedir un taxi, por favor?","Hello, could you call me a taxi, please?"],
+["En la parada o en la calle","Disculpe, ¿está libre?","Excuse me, are you available?"],
+["Decir a dónde va","Buenas, ¿me puede llevar a esta dirección, por favor? (mostrar la dirección escrita en el teléfono)","Hello, could you take me to this address, please? (show the address written on the phone)"],
+["Precio y duración","¿Cuánto cuesta aproximadamente? ¿Cuánto tiempo tarda?","How much does it cost approximately? How long does it take?"],
+["Pagar","¿Puedo pagar con tarjeta? / ¿Acepta efectivo?","Can I pay by card? / Do you accept cash?"],
+["Recibo","¿Me puede dar el recibo, por favor?","Could you give me the receipt, please?"],
+["Al bajar","Muchas gracias, que tenga buen día.","Thank you very much, have a good day."]]},
+{id:"comida",t:"Comida",s:"Restaurantes",i:[
+["Pedir mesa","Hola, mesa para dos personas, por favor.","Hello, a table for two, please."],
+["Pedir la carta","¿Me puede traer el menú, por favor?","Could you bring me the menu, please?"],
+["Alergias o lo que no come","No como [alimento], ¿tiene algo sin eso?","I don't eat [alimento], do you have something without that?"],
+["Pedir la cuenta","La cuenta, por favor.","The bill, please."]]},
+{id:"ayuda",t:"Ayuda",s:"Preguntas y emergencias",sos:true,i:[
+["Pedir ayuda","Disculpe, ¿me puede ayudar?","Excuse me, can you help me?"],
+["Pedir direcciones","¿Cómo llego a [lugar]?","How do I get to [lugar]?"],
+["Si no entiende","Perdón, no hablo inglés. ¿Puede escribirlo, por favor?","Sorry, I don't speak English. Could you write it down, please?"],
+["Emergencia","Necesito ayuda, es una emergencia.","I need help, it's an emergency."],
+["Médico u hospital","¿Dónde hay un médico u hospital cercano?","Where is the nearest doctor or hospital?"]]}
+];
+const TABS=[{id:"ruta",t:"Mi ruta"},{id:"trad",t:"Traductor"},...GROUPS.map(g=>({id:g.id,t:g.t}))];
+const $=s=>document.querySelector(s), main=$("#main"), tabsEl=$("#tabs");
+const fills={}; let cur="ruta";
+try{cur=localStorage.getItem("fv-tab")||"ruta"}catch(e){}
+if(!TABS.some(t=>t.id===cur))cur="ruta";
+
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function toast(m){const t=el("div","toast",m);document.body.append(t);setTimeout(()=>t.remove(),1600)}
+function sub(s){return s.replace(/\[(\w+)\]/g,(m,k)=>fills[k]||m)}
+function copy(text){
+  const ok=()=>toast("Copiado");
+  const fb=()=>{const ta=document.createElement("textarea");ta.value=text;document.body.append(ta);ta.select();try{document.execCommand("copy");ok()}catch(e){toast("No se pudo copiar")}ta.remove()};
+  navigator.clipboard?navigator.clipboard.writeText(text).then(ok,fb):fb();
+}
+function speak(text,lang){
+  if(!window.speechSynthesis){toast("Sin voz en este dispositivo");return}
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=lang||"en-US";u.rate=.9;speechSynthesis.speak(u);
+}
+let showEn="",showLang="en-US";
+function show(en,es,lbl,lang){showEn=en;showLang=lang||"en-US";$("#showEn").textContent=en;$("#showEs").textContent=es;$("#showLbl").textContent=lbl||"Para el personal · For staff";$("#show").hidden=false}
+$("#showClose").onclick=()=>{$("#show").hidden=true;speechSynthesis&&speechSynthesis.cancel()};
+$("#showSay").onclick=()=>speak(showEn,showLang);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#showClose").click()});
+
+function btn(label,fn,main){const b=el("button","btn"+(main?" main":""),label);b.type="button";b.onclick=fn;return b}
+
+function phraseCard(label,es,en){
+  const c=el("div","card");
+  c.append(el("div","lbl",label));
+  const e=el("p","es"),n=el("p","en");
+  const keys=[...new Set((en.match(/\[(\w+)\]/g)||[]).map(m=>m.slice(1,-1)))];
+  const paint=()=>{e.textContent=sub(es);n.textContent=sub(en)};
+  paint();
+  c.append(e,n);
+  keys.forEach(k=>{
+    const f=el("div","fill"),inp=document.createElement("input");
+    inp.id="fill-"+k+"-"+Math.random().toString(36).slice(2,6);inp.placeholder="Escribe: "+k;inp.value=fills[k]||"";inp.setAttribute("aria-label",k);
+    inp.oninput=()=>{fills[k]=inp.value.trim();paint()};f.append(inp);c.append(f);
+  });
+  const r=el("div","row");
+  r.append(btn("Mostrar",()=>show(sub(en),sub(es)),true),btn("Escuchar",()=>speak(sub(en))),btn("Copiar",()=>copy(sub(en))));
+  c.append(r);return c;
+}
+function cityCard(x){
+  const c=el("div","card city");
+  c.append(el("h3",null,x.c));
+  c.append(el("p","meta",x.h+" · "+x.p+" · "+x.n));
+  const dl=el("dl");
+  [["Dirección del hotel",x.a],["A dónde ir",x.go],["Cómo llegar",x.how],["Qué comprar",x.buy]].forEach(([k,v])=>{dl.append(el("dt",null,k),el("dd",null,v))});
+  c.append(dl);
+  c.append(el("div","lbl","Qué decir"));
+  c.append(el("p","es",x.say[0]),el("p","en",x.say[1]));
+  const r=el("div","row");
+  r.append(btn("Mostrar",()=>show(x.say[1],x.say[0]),true),btn("Escuchar",()=>speak(x.say[1])));
+  c.append(r);
+  c.append(el("div","lbl","Si prefiere taxi"));
+  c.append(el("p","es",x.taxi[0]),el("p","en",x.taxi[1]));
+  const r2=el("div","row");
+  r2.append(btn("Mostrar taxi",()=>show(x.taxi[1],x.taxi[0],x.h+" · "+x.a),true),btn("Escuchar",()=>speak(x.taxi[1])),btn("Copiar dirección",()=>copy(x.a)));
+  const m=el("a","btn","Abrir mapa");m.href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(x.h+", "+x.a);m.target="_blank";m.rel="noopener";
+  r2.append(m);c.append(r2);return c;
+}
+function sosBlock(){
+  const d=el("div","sos");
+  [["112","Dinamarca y Suecia"],["112","Noruega: policía"],["113","Noruega: ambulancia"]].forEach(([n,t])=>{const b=el("div");b.append(el("b",null,n),el("span",null,t));d.append(b)});
+  return d;
+}
+function render(){
+  main.replaceChildren();
+  const q=$("#q").value.trim().toLowerCase();
+  if(q){
+    let n=0;
+    GROUPS.forEach(g=>g.i.forEach(([l,es,en])=>{if((l+es+en+g.t).toLowerCase().includes(q)){n++;main.append(phraseCard(g.t+" · "+l,es,en))}}));
+    CITIES.forEach(x=>{if((x.c+x.h+x.a+x.buy+x.say[0]+x.say[1]).toLowerCase().includes(q)){n++;main.append(cityCard(x))}});
+    if(!n)main.append(el("p","note","No hay frases con esa palabra. Prueba con otra o toca una pestaña."));
+    return;
+  }
+  if(cur==="ruta"){
+    main.append(el("p","note","Una tarjeta por ciudad: hotel, cómo llegar a la estación y qué decir para comprar el siguiente trayecto. Las fechas son las del itinerario actual."));
+    CITIES.forEach(x=>main.append(cityCard(x)));
+    main.append(el("p","note","Direcciones de referencia del hotel más económico de cada ciudad (octubre 2026). Confirma la dirección exacta al reservar."));
+    return;
+  }
+  if(cur==="trad"){translatorView();return}
+  const g=GROUPS.find(g=>g.id===cur);
+  main.append(el("h2",null,g.t));main.append(el("p","note",g.s));
+  if(g.sos){main.append(sosBlock())}
+  if(g.tip){const t=el("div","card");t.append(el("div","lbl","Recomendado"),el("p","es",g.tip));main.append(t)}
+  g.i.forEach(([l,es,en])=>main.append(phraseCard(l,es,en)));
+}
+const DIRS=[
+["Spanish","English","Español → Inglés (lo que quiero decir)","en-US"],
+["English","Spanish","Inglés → Español (entender lo que me escriben)","es-ES"],
+["Spanish","Norwegian (Bokmål)","Español → Noruego","nb-NO"],
+["Spanish","Swedish","Español → Sueco","sv-SE"],
+["Spanish","Danish","Español → Danés","da-DK"]];
+const tr={dir:0,src:"",out:"",busy:false,err:""};
+function translatorView(){
+  const d=DIRS[tr.dir];
+  const c=el("div","card");
+  c.append(el("div","lbl","Traductor"));
+  c.append(el("p","note","Escribe lo que quieres decir y tradúcelo. Con Mostrar se lo enseñas a la otra persona; con Escuchar suena en voz alta. Solo funciona abierto desde claude.ai."));
+  const sel=document.createElement("select");sel.id="tr-dir";sel.setAttribute("aria-label","Idiomas");
+  DIRS.forEach((x,i)=>{const o=el("option",null,x[2]);o.value=i;sel.append(o)});sel.value=tr.dir;
+  sel.onchange=()=>{tr.dir=+sel.value;tr.out="";tr.err="";render()};
+  const ta=document.createElement("textarea");ta.id="tr-src";ta.rows=4;ta.value=tr.src;
+  ta.placeholder=tr.dir===1?"Pega o escribe el texto en inglés…":"Escribe en español lo que quieres decir…";
+  ta.oninput=()=>{tr.src=ta.value};
+  c.append(sel,ta);
+  const r=el("div","row");
+  const go=btn(tr.busy?"Traduciendo…":"Traducir",async()=>{
+    const text=ta.value.trim();if(!text||tr.busy)return;
+    const sample=window.claude&&await window.claude.use("sample");
+    if(!sample){tr.err="El traductor solo funciona abierto desde claude.ai. Las frases sí funcionan sin internet.";render();return}
+    tr.busy=true;tr.err="";tr.out="";render();
+    try{
+      const res=await sample("Translate the text between the markers from "+d[0]+" to "+d[1]+". Use natural, polite, short everyday wording for a tourist talking to hotel, train, restaurant or tour staff. Reply with ONLY the translation, no quotes or notes.\n\n<<<\n"+text+"\n>>>",{modelTier:"quick"});
+      tr.out=(res.text||"").trim();
+    }catch(e){
+      tr.err=e&&e.code==="not_granted"?"Falta el permiso para traducir. Vuelve a tocar Traducir y acepta.":e&&e.code==="rate_limited"?"Demasiadas traducciones seguidas. Espera un momento.":"No se pudo traducir. Revisa la conexión e intenta de nuevo.";
+    }
+    tr.busy=false;render();
+  },true);
+  go.disabled=tr.busy;
+  r.append(go,btn("Borrar",()=>{tr.src="";tr.out="";tr.err="";render()}));
+  c.append(r);
+  main.append(c);
+  if(tr.err){const e=el("p","note",tr.err);e.style.color="var(--warn)";e.setAttribute("role","alert");main.append(e)}
+  if(tr.out){
+    const o=el("div","card");
+    o.append(el("div","lbl",d[1]),el("p","en",tr.out));
+    const rr=el("div","row");
+    rr.append(btn("Mostrar",()=>show(tr.out,tr.src,null,d[3]),true),btn("Escuchar",()=>speak(tr.out,d[3])),btn("Copiar",()=>copy(tr.out)));
+    o.append(rr);main.append(o);
+  }
+}
+function renderTabs(){
+  tabsEl.replaceChildren();
+  TABS.forEach(t=>{
+    const b=el("button","tab",t.t);b.type="button";b.setAttribute("role","tab");b.setAttribute("aria-selected",String(t.id===cur&&!$("#q").value));
+    b.onclick=()=>{cur=t.id;$("#q").value="";try{localStorage.setItem("fv-tab",cur)}catch(e){}renderTabs();render();scrollTo(0,0)};
+    tabsEl.append(b);
+  });
+}
+$("#q").addEventListener("input",()=>{renderTabs();render()});
+renderTabs();render();
+</script>
+<script>if("serviceWorker"in navigator)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})</script>

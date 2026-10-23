@@ -1,0 +1,16 @@
+{
+  "name": "Frases de Viaje",
+  "short_name": "Frases",
+  "description": "Frases en español e inglés para el viaje por Dinamarca, Suecia y Noruega.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0c1a1f",
+  "theme_color": "#0d6b5f",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
