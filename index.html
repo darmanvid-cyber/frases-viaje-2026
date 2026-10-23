@@ -71,6 +71,31 @@ dd{margin:0}
 #show .small{color:var(--muted);margin:0}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;z-index:60}
 @media (prefers-reduced-motion:no-preference){.tab,.btn{transition:background .15s}}
+
+.hero{position:relative;overflow:hidden;border-radius:16px;color:#fff;padding:22px 18px 74px;background:linear-gradient(180deg,#040a22,#0a2347)}
+.hero .aur{position:absolute;inset:-25% -15% 25% -15%;filter:blur(26px);opacity:.9;background:radial-gradient(55% 55% at 22% 62%,#2bffb0,transparent 70%),radial-gradient(50% 60% at 58% 38%,#8a5cff,transparent 70%),radial-gradient(40% 50% at 86% 66%,#16d9ff,transparent 70%)}
+@media (prefers-reduced-motion:no-preference){.hero .aur{animation:sway 14s ease-in-out infinite alternate}}
+@keyframes sway{to{transform:translateX(7%) skewX(-7deg);opacity:.6}}
+.stars{position:absolute;inset:0;background-image:radial-gradient(1.5px 1.5px at 12% 20%,#fff,transparent),radial-gradient(1px 1px at 38% 12%,#fff,transparent),radial-gradient(1.5px 1.5px at 62% 28%,#fff,transparent),radial-gradient(1px 1px at 83% 14%,#fff,transparent),radial-gradient(1px 1px at 25% 45%,#fff,transparent),radial-gradient(1.5px 1.5px at 92% 40%,#fff,transparent),radial-gradient(1px 1px at 50% 8%,#fff,transparent)}
+.hero .mtn{position:absolute;left:0;right:0;bottom:0;width:100%;height:64px}
+.hero h2.big1{font:800 clamp(1.8rem,8vw,2.6rem)/1.05 var(--display);margin:0;position:relative;text-shadow:0 2px 14px rgba(0,0,0,.45)}
+.hero p{margin:6px 0 0;position:relative;opacity:.95}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;position:relative}
+.chips span{background:rgba(255,255,255,.18);backdrop-filter:blur(4px);padding:5px 11px;border-radius:999px;font-size:.85rem;font-weight:700}
+.scene{position:relative;height:104px;overflow:hidden}
+.scene svg{position:absolute;inset:0;width:100%;height:100%}
+.scene .tag{position:absolute;left:14px;bottom:8px;color:#fff;font:800 1.55rem var(--display);text-shadow:0 2px 10px rgba(0,0,0,.55);z-index:2}
+.scene .date{position:absolute;right:10px;top:10px;background:rgba(0,0,0,.45);color:#fff;font:700 .8rem var(--body);padding:4px 10px;border-radius:999px;z-index:2}
+.scene .glow{position:absolute;inset:-30% -10% 20% -10%;filter:blur(18px);opacity:.85;background:radial-gradient(50% 60% at 30% 60%,#2bffb0,transparent 70%),radial-gradient(45% 55% at 70% 45%,#8a5cff,transparent 70%)}
+.card.stop{padding:0;overflow:hidden;gap:0}
+.stop .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px}
+.stop .body p{margin:0}
+.city .scene{margin:-14px -14px 0;border-radius:12px 12px 0 0}
+.city{scroll-margin-top:150px}
+.leg{display:flex;gap:12px;padding:0 6px}
+.leg i{width:5px;border-radius:5px;background:linear-gradient(#2bffb0,#8a5cff);flex:none;min-height:46px}
+.leg b{display:block}
+.leg span{color:var(--muted);font-size:.9rem}
 </style>
 <div class="wrap">
 <header>
@@ -143,10 +168,10 @@ const GROUPS=[
 ["Emergencia","Necesito ayuda, es una emergencia.","I need help, it's an emergency."],
 ["Médico u hospital","¿Dónde hay un médico u hospital cercano?","Where is the nearest doctor or hospital?"]]}
 ];
-const TABS=[{id:"ruta",t:"Mi ruta"},...GROUPS.map(g=>({id:g.id,t:g.t}))];
+const TABS=[{id:"viaje",t:"Itinerario"},{id:"ruta",t:"Frases por ciudad"},...GROUPS.map(g=>({id:g.id,t:g.t}))];
 const $=s=>document.querySelector(s), main=$("#main"), tabsEl=$("#tabs");
-const fills={}; let cur="ruta";
-try{cur=localStorage.getItem("fv-tab")||"ruta"}catch(e){}
+const fills={}; let cur="viaje";
+try{cur=localStorage.getItem("fv-tab")||"viaje"}catch(e){}
 if(!TABS.some(t=>t.id===cur))cur="ruta";
 
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
@@ -187,7 +212,8 @@ function phraseCard(label,es,en){
   c.append(r);return c;
 }
 function cityCard(x){
-  const c=el("div","card city");
+  const c=el("div","card city");c.id="city-"+CITIES.indexOf(x);
+  c.append(sceneEl(["cph","sto","osl","ber","tro","osr"][CITIES.indexOf(x)]));
   c.append(el("h3",null,x.c));
   c.append(el("p","meta",x.h+" · "+x.p+" · "+x.n));
   const dl=el("dl");
@@ -220,6 +246,7 @@ function render(){
     if(!n)main.append(el("p","note","No hay frases con esa palabra. Prueba con otra o toca una pestaña."));
     return;
   }
+  if(cur==="viaje"){itinerary();return}
   if(cur==="ruta"){
     main.append(el("p","note","Una tarjeta por ciudad: hotel, cómo llegar a la estación y qué decir para comprar el siguiente trayecto. Las fechas son las del itinerario actual."));
     CITIES.forEach(x=>main.append(cityCard(x)));
@@ -231,6 +258,56 @@ function render(){
   if(g.sos){main.append(sosBlock())}
   if(g.tip){const t=el("div","card");t.append(el("div","lbl","Recomendado"),el("p","es",g.tip));main.append(t)}
   g.i.forEach(([l,es,en])=>main.append(phraseCard(l,es,en)));
+}
+
+const MTN="M0,64 L0,40 L40,22 L80,40 L130,10 L190,42 L250,18 L310,40 L360,24 L400,38 L400,64Z";
+const SCENES={
+cph:{sky:"linear-gradient(180deg,#ffbf6b,#ff4f7b)",svg:'<circle cx="300" cy="66" r="26" fill="#ffe28a"/><g fill="#2a0f33"><rect x="0" y="88" width="400" height="30"/><rect x="30" y="66" width="26" height="30"/><polygon points="43,30 38,66 48,66"/><rect x="90" y="72" width="40" height="24"/><rect x="150" y="58" width="24" height="40"/><polygon points="162,18 156,58 168,58"/><rect x="230" y="68" width="50" height="30"/><rect x="310" y="60" width="22" height="38"/><polygon points="321,24 315,60 327,60"/><rect x="345" y="74" width="40" height="22"/></g>'},
+sto:{sky:"linear-gradient(180deg,#2f5bff,#c04bff)",stars:1,svg:'<g fill="#150a45"><rect x="0" y="86" width="400" height="30"/><rect x="20" y="62" width="34" height="30"/><rect x="62" y="50" width="28" height="42"/><polygon points="76,30 66,50 86,50"/><rect x="110" y="68" width="50" height="26"/><rect x="180" y="56" width="30" height="38"/><rect x="226" y="70" width="44" height="24"/><rect x="290" y="46" width="26" height="48"/><polygon points="303,26 293,46 313,46"/><rect x="330" y="66" width="50" height="28"/></g><g fill="#ffd36b"><rect x="70" y="60" width="4" height="5"/><rect x="190" y="66" width="4" height="5"/><rect x="298" y="58" width="4" height="5"/><rect x="40" y="72" width="4" height="5"/></g>'},
+osl:{sky:"linear-gradient(180deg,#19c3e6,#2a5bd7)",svg:'<rect y="90" width="400" height="30" fill="#0a2f78"/><polygon points="110,92 330,54 330,92" fill="#eaf6ff"/><polygon points="110,92 330,54 330,60 126,92" fill="#9fd8ff"/><path d="M0,90 L60,74 L120,90Z" fill="#0f3d8f"/>'},
+ber:{sky:"linear-gradient(180deg,#63d6c6,#3b6fb6)",svg:'<path d="M0,56 L70,24 L150,52 L230,18 L310,50 L400,30 L400,110 L0,110Z" fill="#1f5a52"/>'+[["#e63946",12],["#ffd23f",58],["#f4f1ea",104],["#3a86ff",150],["#fb8500",196],["#e63946",242],["#ffd23f",288],["#f4f1ea",334]].map(([c,x],i)=>'<rect x="'+x+'" y="'+(68-(i%3)*6)+'" width="40" height="'+(44+(i%3)*6)+'" fill="'+c+'"/><polygon points="'+x+','+(68-(i%3)*6)+' '+(x+20)+','+(50-(i%3)*6)+' '+(x+40)+','+(68-(i%3)*6)+'" fill="#3a1f2b"/>').join('')},
+tro:{sky:"linear-gradient(180deg,#050b24,#0b2a4a)",stars:1,glow:1,svg:'<path d="M0,110 L0,70 L50,44 L90,70 L140,30 L200,74 L260,40 L320,72 L370,50 L400,68 L400,110Z" fill="#0b1830"/><polygon points="262,106 282,52 302,106" fill="#e6f6ff"/><rect x="0" y="98" width="400" height="14" fill="#06101f"/>'},
+osr:{sky:"linear-gradient(180deg,#2b1b6e,#ff6aa2)",stars:1,svg:'<circle cx="320" cy="34" r="14" fill="#fff4d0"/><g fill="#120838"><rect x="0" y="90" width="400" height="30"/><rect x="24" y="70" width="40" height="26"/><rect x="90" y="60" width="30" height="36"/><rect x="150" y="74" width="50" height="22"/><polygon points="220,92 340,62 340,92"/><rect x="350" y="70" width="40" height="26"/></g>'}
+};
+const STOPS=[
+{k:"cph",ci:0,city:"Copenhague",date:"Hasta el 10 nov",hotel:"Hotel Skt. Annæ",sub:"~$190 por noche",leg:["Tren directo · ~5h30","Por el puente de Öresund · Snälltåget o DSB · 10 nov"]},
+{k:"sto",ci:1,city:"Estocolmo",date:"10–13 nov · 3 noches",hotel:"Scandic Continental",sub:"~$180 por noche",leg:["Tren directo · ~5h20 a 6h","SJ o Vy · 13 nov"]},
+{k:"osl",ci:2,city:"Oslo",date:"13–14 nov · 1 noche",hotel:"Thon Hotel Opera",sub:"~$150 por noche",leg:["Norway in a Nutshell","Tren y crucero por el Sognefjord, ya reservado · 14 nov"]},
+{k:"ber",ci:3,city:"Bergen",date:"14–15 nov · 1 noche",hotel:"Thon Hotel Bristol",sub:"~$170 por noche",leg:["Crucero Havila Voyages","Bergen → Tromsø, rumbo norte · sale el 15 nov"]},
+{k:"tro",ci:4,city:"Tromsø",date:"19–24 nov · 5 noches",hotel:"Clarion Collection Hotel Aurora",sub:"~$200 por noche · auroras, trineo de perros, ballenas y cultura sami",leg:["Vuelo Tromsø → Oslo","SAS o Norwegian · 24 nov"]},
+{k:"osr",ci:5,city:"Oslo",date:"24–25 nov · 1 noche",hotel:"Thon Hotel Opera",sub:"~$150 por noche",leg:["Vuelo Oslo → Bogotá","25 de noviembre · 6:00 am"]}
+];
+function sceneEl(k,tag,date){
+  const S=SCENES[k],d=el("div","scene");d.style.background=S.sky;
+  if(S.glow){d.append(el("div","glow"))}
+  if(S.stars){d.append(el("div","stars"))}
+  const v=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  v.setAttribute("viewBox","0 0 400 110");v.setAttribute("preserveAspectRatio","xMidYMax slice");v.setAttribute("aria-hidden","true");
+  v.innerHTML=S.svg;d.append(v);
+  if(tag)d.append(el("div","tag",tag));
+  if(date)d.append(el("div","date",date));
+  return d;
+}
+function itinerary(){
+  const h=el("div","hero");
+  h.append(el("div","aur"),el("div","stars"));
+  const m=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  m.setAttribute("class","mtn");m.setAttribute("viewBox","0 0 400 64");m.setAttribute("preserveAspectRatio","none");m.setAttribute("aria-hidden","true");
+  m.innerHTML='<path d="'+MTN+'" fill="#06101f"/>';
+  h.append(m);
+  h.append(el("h2","big1","Mi viaje al norte"));
+  h.append(el("p",null,"Copenhague, Estocolmo, Oslo, Bergen y Tromsø, hasta el 25 de noviembre."));
+  const ch=el("div","chips");["6 hoteles","6 trayectos","Auroras en Tromsø","Vuelo a Bogotá 25 nov · 6:00"].forEach(t=>ch.append(el("span",null,t)));
+  h.append(ch);main.append(h);
+  STOPS.forEach((x,i)=>{
+    const c=el("div","card stop");
+    c.append(sceneEl(x.k,x.city,x.date));
+    const b=el("div","body");
+    b.append(el("div","lbl","Hotel"),el("p","es",x.hotel),el("p","note",x.sub));
+    b.append(btn("Ver frases de "+x.city,()=>{cur="ruta";try{localStorage.setItem("fv-tab",cur)}catch(e){}renderTabs();render();const t=document.getElementById("city-"+x.ci);if(t)t.scrollIntoView({block:"start"})}));
+    c.append(b);main.append(c);
+    const l=el("div","leg");const bar=el("i");const tx=el("div");const lb=el("b",null,x.leg[0]);tx.append(lb,el("span",null,x.leg[1]));l.append(bar,tx);main.append(l);
+  });
 }
 function renderTabs(){
   tabsEl.replaceChildren();
