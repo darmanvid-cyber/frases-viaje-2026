@@ -102,6 +102,9 @@ dd{margin:0}
 .mapbox{width:100%;height:280px;border:0;border-radius:10px;background:var(--en-bg)}
 .place h3{font:800 1.1rem var(--display);margin:0}
 .route{border:2px solid var(--accent)}
+
+.hform{display:flex;flex-direction:column;gap:8px}
+.hform input{font:inherit;padding:10px 12px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
 </style>
 <div class="wrap">
 <header>
@@ -221,7 +224,7 @@ function cityCard(x){
   const c=el("div","card city");c.id="city-"+CITIES.indexOf(x);
   c.append(sceneEl(["cph","sto","osl","ber","tro","osr"][CITIES.indexOf(x)]));
   c.append(el("h3",null,x.c));
-  c.append(el("p","meta",x.h+" · "+x.p+" · "+x.n));
+  c.append(el("p","meta",[x.h,x.p,x.n].filter(Boolean).join(" · ")));
   const dl=el("dl");
   [["Dirección del hotel",x.a],["A dónde ir",x.go],["Cómo llegar",x.how],["Qué comprar",x.buy]].forEach(([k,v])=>{dl.append(el("dt",null,k),el("dd",null,v))});
   c.append(dl);
@@ -379,6 +382,51 @@ function placesView(){
   P.spots.forEach(x=>main.append(mapCard(P,x[0],x[1],x[2],x[3])));
   if(P.note)main.append(el("p","note",P.note));
 }
+
+const HK="fv-hotels";
+let HO={},editing=null;
+try{HO=JSON.parse(localStorage.getItem(HK)||"{}")||{}}catch(e){HO={}}
+const ORIG_C=CITIES.map(x=>({h:x.h,a:x.a,p:x.p,how:x.how,taxi:x.taxi.slice()}));
+const ORIG_P=PLACES.map(p=>({hotel:p.hotel,m:p.mains.map(x=>x.d),s:p.spots.map(x=>x[1])}));
+const ORIG_S=STOPS.map(x=>({hotel:x.hotel,sub:x.sub}));
+const street=a=>a.split(",")[0].trim();
+const sents=(t,drop)=>{const r=t.split(". ").map(x=>x.replace(/\.$/,"")).filter(x=>x&&!drop.test(x)).join(". ");return r?r+".":""};
+function applyHotels(){
+  CITIES.forEach((x,i)=>{
+    const o=ORIG_C[i],ov=HO[PCI[i]];
+    x.h=o.h;x.a=o.a;x.p=o.p;x.how=o.how;x.taxi=o.taxi.slice();
+    if(ov){x.h=ov.h;x.a=ov.a;x.p="";x.how="Mira la ruta en Mapas y lugares: depende de la ubicación de tu hotel.";
+      x.taxi=["Buenas, ¿me puede llevar a "+street(ov.a)+", por favor? Es el "+ov.h+".","Hello, could you take me to "+street(ov.a)+", please? It's the "+ov.h+"."]}
+  });
+  PLACES.forEach((p,i)=>{
+    const ov=HO[i],o=ORIG_P[i];
+    p.hotel=ov?ov.h+", "+ov.a:o.hotel;
+    p.mains.forEach((x,j)=>{x.d=ov?sents(o.m[j],/a pie|minutos|bus y metro|cruzando|pegado/i):o.m[j]});
+    p.spots.forEach((x,j)=>{x[1]=ov?sents(o.s[j],/hotel/i):o.s[j]});
+  });
+  STOPS.forEach((x,i)=>{
+    const ov=HO[PCI[i]],o=ORIG_S[i];
+    x.hotel=ov?ov.h:o.hotel;
+    x.sub=ov?o.sub.split(" · ").slice(1).join(" · "):o.sub;
+  });
+}
+function saveHotels(){try{localStorage.setItem(HK,JSON.stringify(HO))}catch(e){toast("No se pudo guardar en este celular")}}
+function hotelForm(i){
+  const k=PCI[i],f=el("div","hform");
+  const n=document.createElement("input");n.id="hn-"+i;n.value=CITIES[i].h;n.placeholder="Nombre del hotel";n.setAttribute("aria-label","Nombre del hotel");
+  const a=document.createElement("input");a.id="ha-"+i;a.value=CITIES[i].a;a.placeholder="Dirección completa, con ciudad y país";a.setAttribute("aria-label","Dirección");
+  f.append(n,a);
+  f.append(el("p","note","Escribe la dirección completa con ciudad y país, así los mapas la encuentran. Se actualizan las frases de taxi y todos los mapas. Queda guardado solo en este celular."+(k===2?" En Oslo se aplica a las dos noches.":"")));
+  const r=el("div","row");
+  r.append(btn("Guardar",()=>{
+    const h=n.value.trim(),ad=a.value.trim();
+    if(!h||!ad){toast("Escribe nombre y dirección");return}
+    HO[k]={h:h,a:ad};saveHotels();applyHotels();editing=null;render();toast("Hotel guardado");
+  },true),btn("Cancelar",()=>{editing=null;render()}));
+  if(HO[k])r.append(btn("Restaurar el original",()=>{delete HO[k];saveHotels();applyHotels();editing=null;render();toast("Hotel original")}));
+  f.append(r);return f;
+}
+applyHotels();
 function itinerary(){
   const h=el("div","hero");
   h.append(el("div","aur"),el("div","stars"));
@@ -394,7 +442,7 @@ function itinerary(){
     const c=el("div","card stop");
     c.append(sceneEl(x.k,x.city,x.date));
     const b=el("div","body");
-    b.append(el("div","lbl","Hotel"),el("p","es",x.hotel),el("p","note",x.sub));
+    b.append(el("div","lbl",HO[PCI[x.ci]]?"Hotel (cambiado por ti)":"Hotel"),el("p","es",x.hotel));if(x.sub)b.append(el("p","note",x.sub));if(editing===x.ci)b.append(hotelForm(x.ci));else b.append(btn("Cambiar hotel",()=>{editing=x.ci;render()}));
     b.append(btn("Ver frases de "+x.city,()=>{cur="ruta";try{localStorage.setItem("fv-tab",cur)}catch(e){}renderTabs();render();const t=document.getElementById("city-"+x.ci);if(t)t.scrollIntoView({block:"start"})}));
     b.append(btn("Mapas y qué ver en "+x.city,()=>{pc=PCI[x.ci];cur="lugares";try{localStorage.setItem("fv-tab",cur)}catch(e){}renderTabs();render();scrollTo(0,0)}));
     c.append(b);main.append(c);
@@ -405,7 +453,7 @@ function renderTabs(){
   tabsEl.replaceChildren();
   TABS.forEach(t=>{
     const b=el("button","tab",t.t);b.type="button";b.setAttribute("role","tab");b.setAttribute("aria-selected",String(t.id===cur&&!$("#q").value));
-    b.onclick=()=>{cur=t.id;$("#q").value="";try{localStorage.setItem("fv-tab",cur)}catch(e){}renderTabs();render();scrollTo(0,0)};
+    b.onclick=()=>{cur=t.id;editing=null;$("#q").value="";try{localStorage.setItem("fv-tab",cur)}catch(e){}renderTabs();render();scrollTo(0,0)};
     tabsEl.append(b);
   });
 }
