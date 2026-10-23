@@ -96,6 +96,12 @@ dd{margin:0}
 .leg i{width:5px;border-radius:5px;background:linear-gradient(#2bffb0,#8a5cff);flex:none;min-height:46px}
 .leg b{display:block}
 .leg span{color:var(--muted);font-size:.9rem}
+
+.pickers{display:flex;flex-wrap:wrap;gap:8px}
+.pickers .tab[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.mapbox{width:100%;height:280px;border:0;border-radius:10px;background:var(--en-bg)}
+.place h3{font:800 1.1rem var(--display);margin:0}
+.route{border:2px solid var(--accent)}
 </style>
 <div class="wrap">
 <header>
@@ -168,7 +174,7 @@ const GROUPS=[
 ["Emergencia","Necesito ayuda, es una emergencia.","I need help, it's an emergency."],
 ["Médico u hospital","¿Dónde hay un médico u hospital cercano?","Where is the nearest doctor or hospital?"]]}
 ];
-const TABS=[{id:"viaje",t:"Itinerario"},{id:"ruta",t:"Frases por ciudad"},...GROUPS.map(g=>({id:g.id,t:g.t}))];
+const TABS=[{id:"viaje",t:"Itinerario"},{id:"lugares",t:"Mapas y lugares"},{id:"ruta",t:"Frases por ciudad"},...GROUPS.map(g=>({id:g.id,t:g.t}))];
 const $=s=>document.querySelector(s), main=$("#main"), tabsEl=$("#tabs");
 const fills={}; let cur="viaje";
 try{cur=localStorage.getItem("fv-tab")||"viaje"}catch(e){}
@@ -247,6 +253,7 @@ function render(){
     return;
   }
   if(cur==="viaje"){itinerary();return}
+  if(cur==="lugares"){placesView();return}
   if(cur==="ruta"){
     main.append(el("p","note","Una tarjeta por ciudad: hotel, cómo llegar a la estación y qué decir para comprar el siguiente trayecto. Las fechas son las del itinerario actual."));
     CITIES.forEach(x=>main.append(cityCard(x)));
@@ -288,6 +295,90 @@ function sceneEl(k,tag,date){
   if(date)d.append(el("div","date",date));
   return d;
 }
+
+const PLACES=[
+{c:"Copenhague",k:"cph",hotel:"Hotel Skt. Annæ, Sankt Annæ Plads 18-20, 1250 København K, Denmark",
+ mains:[{n:"Del hotel a la Estación Central",d:"Para el tren a Estocolmo del 10 nov. Son unos 20-25 minutos a pie, o bus y metro.",q:"København H, Copenhagen Central Station",m:"r"}],
+ spots:[
+ ["Nyhavn","El canal de casas de colores. Queda muy cerca del hotel.","Nyhavn, Copenhagen","w"],
+ ["Amalienborg","Residencia de la familia real, con cambio de guardia al mediodía.","Amalienborg Palace, Copenhagen","w"],
+ ["La Sirenita","Den Lille Havfrue, la estatua frente al mar.","The Little Mermaid statue, Copenhagen","r"],
+ ["Castillo de Rosenborg","Castillo del siglo XVII que guarda las joyas de la corona.","Rosenborg Castle, Copenhagen","w"],
+ ["Jardines de Tivoli","Parque de atracciones histórico en pleno centro.","Tivoli Gardens, Copenhagen","r"],
+ ["Rundetaarn","La Torre Redonda, con vista de la ciudad.","Rundetaarn, Copenhagen","w"]]},
+{c:"Estocolmo",k:"sto",hotel:"Scandic Continental, Vasagatan 22, 111 20 Stockholm, Sweden",
+ mains:[{n:"Del hotel a la Estación Central",d:"Para el tren a Oslo del 13 nov. Está cruzando la calle, menos de 5 minutos a pie.",q:"Stockholm Centralstation",m:"w"}],
+ spots:[
+ ["Gamla Stan","El casco antiguo medieval, en una isla.","Gamla Stan, Stockholm","w"],
+ ["Museo Vasa","Un barco de guerra de 1628 casi intacto.","Vasa Museum, Stockholm","r"],
+ ["ABBA The Museum","Museo interactivo del grupo sueco.","ABBA The Museum, Stockholm","r"],
+ ["Ayuntamiento (Stadshuset)","Donde se celebra el banquete del Premio Nobel.","Stockholm City Hall","w"],
+ ["Skansen","Museo al aire libre con casas históricas y fauna nórdica.","Skansen, Stockholm","r"],
+ ["Palacio Real","Uno de los palacios reales más grandes de Europa.","Royal Palace, Stockholm","w"]]},
+{c:"Oslo",k:"osl",hotel:"Thon Hotel Opera, Dronning Eufemias gate 4, 0154 Oslo, Norway",
+ mains:[{n:"Del hotel a la Estación Central (Oslo S)",d:"Punto de encuentro del tour Norway in a Nutshell, 14 nov. Son 3-5 minutos a pie.",q:"Oslo Sentralstasjon",m:"w"},
+        {n:"Del hotel al aeropuerto de Oslo",d:"Para el vuelo a Bogotá del 25 nov a las 6:00. Es muy temprano: confirma el primer tren desde Oslo S o reserva un taxi la noche anterior.",q:"Oslo Airport Gardermoen",m:"r"}],
+ spots:[
+ ["Ópera de Oslo","Se puede subir caminando por el techo inclinado. Está pegada al hotel.","Oslo Opera House","w"],
+ ["Museo Munch","Obras de Edvard Munch, incluido El grito.","Munch Museum, Oslo","w"],
+ ["Fortaleza de Akershus","Fortaleza medieval con vista al fiordo.","Akershus Fortress, Oslo","w"],
+ ["Parque Vigeland","Más de 200 esculturas de Gustav Vigeland.","Vigeland Sculpture Park, Oslo","r"],
+ ["Museo Fram","El barco polar Fram, en la península de Bygdøy.","Fram Museum, Oslo","r"],
+ ["Centro Nobel de la Paz","Exposiciones sobre el Premio Nobel de la Paz.","Nobel Peace Center, Oslo","r"]],
+ note:"El Museo de los Barcos Vikingos sigue cerrado hasta 2027, por el nuevo Museo de la Era Vikinga."},
+{c:"Bergen",k:"ber",hotel:"Thon Hotel Bristol, Torgallmenningen 11, 5014 Bergen, Norway",
+ mains:[{n:"Del hotel a la terminal del crucero Havila",d:"Terminal Jektevik, Nøstegaten 30. Está a unos 20 minutos a pie o en taxi corto. Confirma el muelle en tu tiquete.",q:"Jektevik Terminal, Nøstegaten 30, Bergen",m:"w"}],
+ spots:[
+ ["Museo de los Trolls","Trolls del folclore noruego, a pocos minutos de Bryggen.","Troll Museum, Øvre Dreggsallmenningen 6, Bergen","w"],
+ ["Bryggen","El antiguo muelle hanseático de casas de madera, Patrimonio de la Humanidad.","Bryggen, Bergen","w"],
+ ["Funicular Fløibanen","Sube al mirador de Fløyen, con vista de toda la ciudad y un bosque de trolls. Revisa los horarios de noviembre.","Fløibanen, Vetrlidsallmenningen 23A, Bergen","w"],
+ ["Mercado de pescado","Fisketorget, junto al puerto.","Fisketorget, Bergen","w"],
+ ["Fortaleza de Bergenhus","Fortaleza medieval al lado de Bryggen.","Bergenhus Fortress, Bergen","w"],
+ ["Museo Hanseático","Cómo vivían los comerciantes de la Liga Hanseática.","Hanseatic Museum and Schøtstuene, Bergen","w"]]},
+{c:"Tromsø",k:"tro",hotel:"Clarion Collection Hotel Aurora, Sjøgata 19-21, 9008 Tromsø, Norway",
+ mains:[{n:"Del hotel al aeropuerto de Tromsø",d:"Para el vuelo a Oslo del 24 nov. Hay bus entre el aeropuerto y el centro.",q:"Tromsø Airport Langnes",m:"r"}],
+ spots:[
+ ["Catedral del Ártico","Iglesia de líneas triangulares al otro lado del puente.","Arctic Cathedral, Tromsø","r"],
+ ["Teleférico Fjellheisen","Sube a la montaña para ver la ciudad y, con suerte, las auroras.","Fjellheisen Cable Car, Tromsø","r"],
+ ["Polaria","Acuario del Ártico, con focas.","Polaria, Tromsø","w"],
+ ["Museo Polar","Historia de la exploración del Ártico.","Polar Museum, Tromsø","w"],
+ ["Museo de Tromsø","Cultura sami y las auroras boreales.","Tromsø University Museum","r"],
+ ["Ølhallen","El pub histórico de la cervecería Mack.","Ølhallen, Storgata 4, Tromsø","w"]]}
+];
+const PCI=[0,1,2,3,4,2];
+let pc=0;
+const enc=encodeURIComponent;
+const gUrl=(o,d,m)=>"https://www.google.com/maps/dir/?api=1&origin="+enc(o)+"&destination="+enc(d)+"&travelmode="+(m==="r"?"transit":"walking");
+const aUrl=(o,d,m)=>"https://maps.apple.com/?saddr="+enc(o)+"&daddr="+enc(d)+"&dirflg="+m;
+const eUrl=(o,d,m)=>"https://maps.google.com/maps?saddr="+enc(o)+"&daddr="+enc(d)+"&dirflg="+m+"&output=embed";
+function link(label,href){const a=el("a","btn",label);a.href=href;a.target="_blank";a.rel="noopener";return a}
+function mapCard(P,name,desc,q,m,cls){
+  const c=el("div","card place "+(cls||""));
+  c.append(el("h3",null,name),el("p","note",desc));
+  c.append(el("div","lbl",(m==="r"?"En transporte público":"A pie")+" desde el hotel"));
+  const holder=el("div"),r=el("div","row");
+  let open=false;
+  const tg=btn("Ver mapa",()=>{
+    open=!open;holder.replaceChildren();
+    if(open){const f=document.createElement("iframe");f.className="mapbox";f.loading="lazy";f.title="Mapa: "+name;f.src=eUrl(P.hotel,q,m);holder.append(f,el("p","note","El mapa necesita internet."))}
+    tg.textContent=open?"Ocultar mapa":"Ver mapa";
+  },true);
+  r.append(tg,link("Google Maps",gUrl(P.hotel,q,m)),link("Apple Maps",aUrl(P.hotel,q,m)));
+  c.append(r,holder);return c;
+}
+function placesView(){
+  const P=PLACES[pc];
+  const pk=el("div","pickers");
+  PLACES.forEach((x,i)=>{const b=el("button","tab",x.c);b.type="button";b.setAttribute("aria-pressed",String(i===pc));b.onclick=()=>{pc=i;render()};pk.append(b)});
+  main.append(pk);
+  const hd=el("div","card stop");hd.append(sceneEl(P.k,P.c));
+  const hb=el("div","body");hb.append(el("div","lbl","Tu hotel"),el("p","es",P.hotel));hd.append(hb);main.append(hd);
+  main.append(el("h2",null,"Para tus trayectos"));
+  P.mains.forEach(x=>main.append(mapCard(P,x.n,x.d,x.q,x.m,"route")));
+  main.append(el("h2",null,"Qué ver en "+P.c));
+  P.spots.forEach(x=>main.append(mapCard(P,x[0],x[1],x[2],x[3])));
+  if(P.note)main.append(el("p","note",P.note));
+}
 function itinerary(){
   const h=el("div","hero");
   h.append(el("div","aur"),el("div","stars"));
@@ -305,6 +396,7 @@ function itinerary(){
     const b=el("div","body");
     b.append(el("div","lbl","Hotel"),el("p","es",x.hotel),el("p","note",x.sub));
     b.append(btn("Ver frases de "+x.city,()=>{cur="ruta";try{localStorage.setItem("fv-tab",cur)}catch(e){}renderTabs();render();const t=document.getElementById("city-"+x.ci);if(t)t.scrollIntoView({block:"start"})}));
+    b.append(btn("Mapas y qué ver en "+x.city,()=>{pc=PCI[x.ci];cur="lugares";try{localStorage.setItem("fv-tab",cur)}catch(e){}renderTabs();render();scrollTo(0,0)}));
     c.append(b);main.append(c);
     const l=el("div","leg");const bar=el("i");const tx=el("div");const lb=el("b",null,x.leg[0]);tx.append(lb,el("span",null,x.leg[1]));l.append(bar,tx);main.append(l);
   });
