@@ -105,6 +105,8 @@ dd{margin:0}
 
 .hform{display:flex;flex-direction:column;gap:8px}
 .hform input{font:inherit;padding:10px 12px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
+
+.ver{display:flex;flex-direction:column;gap:8px;align-items:flex-start;margin-top:24px;color:var(--muted);font-size:.85rem}
 </style>
 <div class="wrap">
 <header>
@@ -478,5 +480,21 @@ function renderTabs(){
 }
 $("#q").addEventListener("input",()=>{renderTabs();render()});
 renderTabs();render();
+</script>
+<script>(function(){
+  var f=document.createElement("div");f.className="ver";
+  f.append("Versión 7 · 23 oct 2026");
+  var b=document.createElement("button");b.type="button";b.className="btn";b.textContent="Actualizar app";
+  b.onclick=function(){
+    b.textContent="Actualizando…";
+    var done=function(){location.replace(location.pathname+"?r="+Date.now())};
+    var p=[];
+    if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}));
+    if(window.caches)p.push(caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x)}))}));
+    Promise.all(p).then(done,done);
+  };
+  f.append(b);
+  document.querySelector(".wrap").append(f);
+})();
 </script>
 <script>if("serviceWorker"in navigator)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})</script>
