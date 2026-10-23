@@ -55,8 +55,6 @@ h2{font:800 1.15rem var(--display);margin:10px 0 0;letter-spacing:.01em}
 a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .fill{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .fill input{font:inherit;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);min-width:0;flex:1 1 140px}
-#tr-dir,#tr-src{font:inherit;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
-#tr-src{resize:vertical}
 .btn:disabled{opacity:.6}
 .city h3{font:800 1.25rem var(--display);margin:0}
 .city .meta{color:var(--muted);font-size:.9rem;margin:0}
@@ -145,7 +143,7 @@ const GROUPS=[
 ["Emergencia","Necesito ayuda, es una emergencia.","I need help, it's an emergency."],
 ["Médico u hospital","¿Dónde hay un médico u hospital cercano?","Where is the nearest doctor or hospital?"]]}
 ];
-const TABS=[{id:"ruta",t:"Mi ruta"},{id:"trad",t:"Traductor"},...GROUPS.map(g=>({id:g.id,t:g.t}))];
+const TABS=[{id:"ruta",t:"Mi ruta"},...GROUPS.map(g=>({id:g.id,t:g.t}))];
 const $=s=>document.querySelector(s), main=$("#main"), tabsEl=$("#tabs");
 const fills={}; let cur="ruta";
 try{cur=localStorage.getItem("fv-tab")||"ruta"}catch(e){}
@@ -228,65 +226,11 @@ function render(){
     main.append(el("p","note","Direcciones de referencia del hotel más económico de cada ciudad (octubre 2026). Confirma la dirección exacta al reservar."));
     return;
   }
-  if(cur==="trad"){translatorView();return}
   const g=GROUPS.find(g=>g.id===cur);
   main.append(el("h2",null,g.t));main.append(el("p","note",g.s));
   if(g.sos){main.append(sosBlock())}
   if(g.tip){const t=el("div","card");t.append(el("div","lbl","Recomendado"),el("p","es",g.tip));main.append(t)}
   g.i.forEach(([l,es,en])=>main.append(phraseCard(l,es,en)));
-}
-const DIRS=[
-["Spanish","English","Español → Inglés (lo que quiero decir)","en-US"],
-["English","Spanish","Inglés → Español (entender lo que me escriben)","es-ES"],
-["Spanish","Norwegian (Bokmål)","Español → Noruego","nb-NO"],
-["Spanish","Swedish","Español → Sueco","sv-SE"],
-["Spanish","Danish","Español → Danés","da-DK"]];
-const LC={"English":"en","Spanish":"es","Norwegian (Bokmål)":"no","Swedish":"sv","Danish":"da"};
-async function mm(text,d){
-  const r=await fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair="+LC[d[0]]+"|"+LC[d[1]]);
-  const j=await r.json();
-  const t=j&&j.responseData&&j.responseData.translatedText;
-  if(!t||j.responseStatus!=200)throw new Error("mm");
-  const e=document.createElement("textarea");e.innerHTML=t;return e.value;
-}
-const tr={dir:0,src:"",out:"",busy:false,err:""};
-function translatorView(){
-  const d=DIRS[tr.dir];
-  const c=el("div","card");
-  c.append(el("div","lbl","Traductor"));
-  c.append(el("p","note","Escribe lo que quieres decir y tradúcelo. Con Mostrar se lo enseñas a la otra persona; con Escuchar suena en voz alta. Necesita internet."));
-  const sel=document.createElement("select");sel.id="tr-dir";sel.setAttribute("aria-label","Idiomas");
-  DIRS.forEach((x,i)=>{const o=el("option",null,x[2]);o.value=i;sel.append(o)});sel.value=tr.dir;
-  sel.onchange=()=>{tr.dir=+sel.value;tr.out="";tr.err="";render()};
-  const ta=document.createElement("textarea");ta.id="tr-src";ta.rows=4;ta.value=tr.src;
-  ta.placeholder=tr.dir===1?"Pega o escribe el texto en inglés…":"Escribe en español lo que quieres decir…";
-  ta.oninput=()=>{tr.src=ta.value};
-  c.append(sel,ta);
-  const r=el("div","row");
-  const go=btn(tr.busy?"Traduciendo…":"Traducir",async()=>{
-    const text=ta.value.trim();if(!text||tr.busy)return;
-    const sample=window.claude&&await window.claude.use("sample");
-    tr.busy=true;tr.err="";tr.out="";render();
-    try{
-      const res=sample?await sample("Translate the text between the markers from "+d[0]+" to "+d[1]+". Use natural, polite, short everyday wording for a tourist talking to hotel, train, restaurant or tour staff. Reply with ONLY the translation, no quotes or notes.\n\n<<<\n"+text+"\n>>>",{modelTier:"quick"});:{text:await mm(text,d)};
-      tr.out=(res.text||"").trim();
-    }catch(e){
-      tr.err=e&&e.code==="not_granted"?"Falta el permiso para traducir. Vuelve a tocar Traducir y acepta.":e&&e.code==="rate_limited"?"Demasiadas traducciones seguidas. Espera un momento.":"No se pudo traducir. Revisa la conexión e intenta de nuevo.";
-    }
-    tr.busy=false;render();
-  },true);
-  go.disabled=tr.busy;
-  r.append(go,btn("Borrar",()=>{tr.src="";tr.out="";tr.err="";render()}));
-  c.append(r);
-  main.append(c);
-  if(tr.err){const e=el("p","note",tr.err);e.style.color="var(--warn)";e.setAttribute("role","alert");main.append(e)}
-  if(tr.out){
-    const o=el("div","card");
-    o.append(el("div","lbl",d[1]),el("p","en",tr.out));
-    const rr=el("div","row");
-    rr.append(btn("Mostrar",()=>show(tr.out,tr.src,null,d[3]),true),btn("Escuchar",()=>speak(tr.out,d[3])),btn("Copiar",()=>copy(tr.out)));
-    o.append(rr);main.append(o);
-  }
 }
 function renderTabs(){
   tabsEl.replaceChildren();
