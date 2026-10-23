@@ -241,12 +241,20 @@ const DIRS=[
 ["Spanish","Norwegian (Bokmål)","Español → Noruego","nb-NO"],
 ["Spanish","Swedish","Español → Sueco","sv-SE"],
 ["Spanish","Danish","Español → Danés","da-DK"]];
+const LC={"English":"en","Spanish":"es","Norwegian (Bokmål)":"no","Swedish":"sv","Danish":"da"};
+async function mm(text,d){
+  const r=await fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair="+LC[d[0]]+"|"+LC[d[1]]);
+  const j=await r.json();
+  const t=j&&j.responseData&&j.responseData.translatedText;
+  if(!t||j.responseStatus!=200)throw new Error("mm");
+  const e=document.createElement("textarea");e.innerHTML=t;return e.value;
+}
 const tr={dir:0,src:"",out:"",busy:false,err:""};
 function translatorView(){
   const d=DIRS[tr.dir];
   const c=el("div","card");
   c.append(el("div","lbl","Traductor"));
-  c.append(el("p","note","Escribe lo que quieres decir y tradúcelo. Con Mostrar se lo enseñas a la otra persona; con Escuchar suena en voz alta. Solo funciona abierto desde claude.ai."));
+  c.append(el("p","note","Escribe lo que quieres decir y tradúcelo. Con Mostrar se lo enseñas a la otra persona; con Escuchar suena en voz alta. Necesita internet."));
   const sel=document.createElement("select");sel.id="tr-dir";sel.setAttribute("aria-label","Idiomas");
   DIRS.forEach((x,i)=>{const o=el("option",null,x[2]);o.value=i;sel.append(o)});sel.value=tr.dir;
   sel.onchange=()=>{tr.dir=+sel.value;tr.out="";tr.err="";render()};
@@ -258,10 +266,9 @@ function translatorView(){
   const go=btn(tr.busy?"Traduciendo…":"Traducir",async()=>{
     const text=ta.value.trim();if(!text||tr.busy)return;
     const sample=window.claude&&await window.claude.use("sample");
-    if(!sample){tr.err="El traductor solo funciona abierto desde claude.ai. Las frases sí funcionan sin internet.";render();return}
     tr.busy=true;tr.err="";tr.out="";render();
     try{
-      const res=await sample("Translate the text between the markers from "+d[0]+" to "+d[1]+". Use natural, polite, short everyday wording for a tourist talking to hotel, train, restaurant or tour staff. Reply with ONLY the translation, no quotes or notes.\n\n<<<\n"+text+"\n>>>",{modelTier:"quick"});
+      const res=sample?await sample("Translate the text between the markers from "+d[0]+" to "+d[1]+". Use natural, polite, short everyday wording for a tourist talking to hotel, train, restaurant or tour staff. Reply with ONLY the translation, no quotes or notes.\n\n<<<\n"+text+"\n>>>",{modelTier:"quick"});:{text:await mm(text,d)};
       tr.out=(res.text||"").trim();
     }catch(e){
       tr.err=e&&e.code==="not_granted"?"Falta el permiso para traducir. Vuelve a tocar Traducir y acepta.":e&&e.code==="rate_limited"?"Demasiadas traducciones seguidas. Espera un momento.":"No se pudo traducir. Revisa la conexión e intenta de nuevo.";
